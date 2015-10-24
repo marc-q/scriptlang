@@ -4,7 +4,7 @@
 int:$a;0
 int:$b;0
 int:$form;0
-print:Calculator Addition\n
+print:Calculator\n
 print:Addition 1, Substration 2, Multiplication 3, Division 4\n
 print:Type the what do you want to do 
 read:$form;int
