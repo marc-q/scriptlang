@@ -1,8 +1,8 @@
 #
 # Test: Calculator
 #
-int:$a;int
-int:$b;int
+int:$a;0
+int:$b;0
 print:Calculator Addition\n
 print:Type the first number 
 read:$a;int

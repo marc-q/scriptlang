@@ -105,6 +105,35 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	}
 }
 
+static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mformat)
+{
+	int sl_int;
+	char sl_str[100];
+	
+	sl_int = 0;
+	
+	if (utils_streq (mformat, "int") == 0)
+	{	
+		mem_get_int (first, &sl_int, mname);
+		
+		if (sl_int == atoi (mvalue))
+		{
+			return 0;
+		}	
+	}
+	else if (utils_streq (mformat, "str") == 0)
+	{
+		mem_get_str (first, sl_str, sizeof (sl_str), mname);
+		
+		if (utils_streq (sl_str, mvalue) == 0)
+		{
+			return 0;
+		}
+	}
+	
+	return 1;
+}
+
 static void sl_printf (char* message)
 {
 	int len;
@@ -151,14 +180,14 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 
 static int read_file (char* filename)
 {
-	int i, sl_argc;
+	int i, sl_argc, sl_ifstate;
 	char line[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
 	char *token, *subtoken, *saveptr;
 	FILE *sl_file;
 	sl_core mcore;
 	struct sl_mem *first = NULL;
 	
-	mcore.memcount = 0;
+	mcore.memcount = sl_ifstate = 0;
 	
 	sl_file = fopen (filename, "r");
 	
@@ -178,7 +207,14 @@ static int read_file (char* filename)
 				
 		if (line[0] != '#')
 		{
-			if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
+			if (sl_ifstate == 1)
+			{
+				if (utils_streq (line, "fi") == 0)
+				{
+					sl_ifstate = 0;
+				}
+			}
+			else if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
 		
@@ -326,6 +362,13 @@ static int read_file (char* filename)
 				else if (utils_streq (sl_function, "read") == 0)
 				{
 						sl_readm (&first, sl_args[0], sl_args[1]);
+				}
+				else if (utils_streq (sl_function, "if") == 0)
+				{
+						if (sl_if (&first, sl_args[0], sl_args[1], sl_args[2]) != 0)
+						{
+							sl_ifstate = 1;
+						}		
 				}
 			}
 		}
