@@ -6,7 +6,6 @@
 .*.swp
 *.out
 scriptlang
-testmem.sl
 
 # IDE files to ignore (Netbeans, Eclipse)
 nbproject/private/

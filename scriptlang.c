@@ -48,9 +48,60 @@ static void sl_set_str_var (struct sl_mem** first, char* mname, char* mvalue)
 	sl_set_str (first, mname, sl_cache);
 }
 
+static void sl_add_int (struct sl_mem** first, char* mname, int mvalue)
+{
+	int sl_cache;
+	
+	mem_get_int (first, &sl_cache, mname);
+	
+	sl_cache += mvalue;
+	
+	sl_set_int (first, mname, sl_cache);
+}
+
+static void sl_add_int_var (struct sl_mem** first, char* mname, char* mvalue)
+{
+	int sl_cache;
+	
+	mem_get_int (first, &sl_cache, mvalue);
+	
+	sl_add_int (first, mname, sl_cache);
+}
+
+static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
+{
+	int sl_int;
+	char sl_str[100];
+	
+	sl_int = 0;
+	
+	if (utils_streq (mformat, "int") == 0)
+	{
+		scanf ("%i", &sl_int);
+		
+		mem_set_int (first, sl_int, mname);			
+	}
+	else if (utils_streq (mformat, "str") == 0)
+	{
+		scanf ("%s", sl_str);
+		
+		mem_set_str (first, sl_str, mname);
+	}
+}
+
 static void sl_printf (char* message)
 {
-	printf ("%s\n", message);
+	int len;
+	
+	len = strlen (message);
+	
+	if (message[len-2] == '\\' && message[len-1] == 'n')
+	{
+		message[len-2] = ' ';
+		message[len-1] = '\n';
+	}
+	
+	printf ("%s", message);
 }
 
 static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
@@ -61,6 +112,13 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 	sl_int = 0;
 	
 	if (utils_streq (mformat, "int") == 0)
+	{
+		mem_get_int (first, &sl_int, mname);
+		
+		printf ("%i", sl_int);
+					
+	}
+	else if (utils_streq (mformat, "intn") == 0)
 	{
 		mem_get_int (first, &sl_int, mname);
 		
@@ -224,7 +282,72 @@ static int read_file (char* filename)
 					
 					sl_set_str (&first, sl_name, sl_str);
 				}
-			}	
+			}
+			else if (parser_get_str (token, "add", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
+			{
+				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
+			
+				if (strlen (subtoken) < sizeof (sl_name))
+				{
+					strcpy (sl_name, subtoken);
+				}
+			
+				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+			
+				if (strlen (subtoken) < sizeof (sl_str))
+				{
+					strcpy (sl_str, subtoken);
+				}
+			
+				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+			
+				if (sl_name[0] != '$')
+				{
+					printf ("Names of variables starts with an $ !\n");
+				}
+				else if (sl_str[0] == '$')
+				{
+					sl_add_int_var (&first, sl_name, sl_str);
+				}
+				else
+				{
+					if (isdigit (sl_str[0]) != 0)
+					{
+						sl_add_int (&first, sl_name, atoi (sl_str));
+					}
+					else
+					{
+						printf ("ERROR: Not an integer!\n");
+					}
+				}
+			}
+			else if (parser_get_str (token, "read", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
+			{
+				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
+			
+				if (strlen (subtoken) < sizeof (sl_name))
+				{
+					strcpy (sl_name, subtoken);
+				}
+			
+				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+			
+				if (strlen (subtoken) < sizeof (sl_str))
+				{
+					strcpy (sl_str, subtoken);
+				}
+			
+				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+			
+				if (sl_name[0] != '$')
+				{
+					printf ("Names of variables starts with an $ !\n");
+				}
+				else
+				{
+					sl_readm (&first, sl_name, sl_str);
+				}
+			}
 		}
 	}
 	
@@ -237,7 +360,7 @@ static int read_file (char* filename)
 
 int main (int argc, char* argv[])
 {
-	printf ("Scriptlang v. %s (C) 2015 Marc Volker Dickmann\n", P_VERSION);
+	printf ("Scriptlang v. %s (C) 2015 Marc Volker Dickmann\n\n", P_VERSION);
 	
 	if (argc == 2)
 	{
