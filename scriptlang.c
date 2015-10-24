@@ -209,7 +209,7 @@ static int read_file (char* filename)
 		{
 			if (sl_ifstate == 1)
 			{
-				if (utils_streq (line, "fi") == 0)
+				if (utils_streq (line, "fi\n") == 0)
 				{
 					sl_ifstate = 0;
 				}
