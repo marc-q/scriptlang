@@ -151,10 +151,8 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 
 static int read_file (char* filename)
 {
-	int sl_int;
-	int sl_argc;
-	char line[SL_LINEMAX], sl_str[100], sl_name[50], sl_cache[100];
-	char sl_function[50], sl_args[4][100];
+	int i, sl_argc;
+	char line[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
 	char *token, *subtoken, *saveptr;
 	FILE *sl_file;
 	sl_core mcore;
@@ -171,19 +169,22 @@ static int read_file (char* filename)
 	
 	while (fgets (line, sizeof (line), sl_file) != NULL)
 	{
-		strcpy (sl_str, "");
-		strcpy (sl_name, "");
 		strcpy (sl_cache, "");
 		
+		for (i = 0; i < 4; i++)
+		{
+			strcpy (sl_args[i], "");
+		}
+				
 		if (line[0] != '#')
 		{
 			if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
 		
-				if (parser_get_str (token, "print", sl_str, sizeof (sl_str), SL_SEP, saveptr) == 0)
+				if (parser_get_str (token, "print", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
-					sl_printf (sl_str);
+					sl_printf (sl_args[0]);
 				}
 			}
 			else if (strstr (line, ":") != NULL && strstr (line, ";") != NULL)
