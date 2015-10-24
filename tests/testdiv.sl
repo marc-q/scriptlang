@@ -1,9 +1,9 @@
-print:Starting sub tests.\n
-int:$i;20
+print:Starting add tests.\n
+int:$i;180
 int:$j;30
 printm:$i;int
-print: - 
+print: / 
 printm:$j;int
 print: = 
-sub:$i;$j
+div:$i;$j
 printm:$i;intn

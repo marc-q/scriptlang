@@ -216,36 +216,23 @@ static int read_file (char* filename)
 					subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
 					sl_argc++;
 				}
+				
+				if (sl_args[0][0] != '$')
+				{
+					printf ("Names of variables starts with an $ !\n");
+				}
 			
 				if (utils_streq (sl_function, "int") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else
-					{
-						sl_define_int (&mcore, &first, sl_args[0], atoi (sl_args[1]));
-					}
+					sl_define_int (&mcore, &first, sl_args[0], atoi (sl_args[1]));
 				}
 				else if (utils_streq (sl_function, "str") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else
-					{
 						sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
-					}
 				}
 				else if (utils_streq (sl_function, "set") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == '$')
 					{
 						sl_set_int_var (&first, sl_args[0], sl_args[1]);
 						sl_set_str_var (&first, sl_args[0], sl_args[1]);
@@ -262,22 +249,11 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "printm") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else
-					{
 						sl_printm (&first, sl_args[0], sl_args[1]);
-					}
 				}
 				else if (utils_streq (sl_function, "add") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == '$')
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 0);
 					}
@@ -295,11 +271,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "sub") == 0)
 				{
-					if (sl_args[0][0] != '$')
-					{
-						printf ("Names of variables starts with an $ !\n");
-					}
-					else if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == '$')
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 1);
 					}
@@ -315,16 +287,45 @@ static int read_file (char* filename)
 						}
 					}
 				}
-				else if (utils_streq (sl_function, "read") == 0)
+				else if (utils_streq (sl_function, "mpl") == 0)
 				{
-					if (sl_args[0][0] != '$')
+					if (sl_args[1][0] == '$')
 					{
-						printf ("Names of variables starts with an $ !\n");
+						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 2);
 					}
 					else
 					{
-						sl_readm (&first, sl_args[0], sl_args[1]);
+						if (isdigit (sl_args[1][0]) != 0)
+						{
+							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 2);
+						}
+						else
+						{
+							printf ("ERROR: Not an integer!\n");
+						}
 					}
+				}
+				else if (utils_streq (sl_function, "div") == 0)
+				{
+					if (sl_args[1][0] == '$')
+					{
+						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 3);
+					}
+					else
+					{
+						if (isdigit (sl_args[1][0]) != 0)
+						{
+							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 3);
+						}
+						else
+						{
+							printf ("ERROR: Not an integer!\n");
+						}
+					}
+				}
+				else if (utils_streq (sl_function, "read") == 0)
+				{
+						sl_readm (&first, sl_args[0], sl_args[1]);
 				}
 			}
 		}
