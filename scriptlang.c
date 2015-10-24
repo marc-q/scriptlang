@@ -48,24 +48,40 @@ static void sl_set_str_var (struct sl_mem** first, char* mname, char* mvalue)
 	sl_set_str (first, mname, sl_cache);
 }
 
-static void sl_add_int (struct sl_mem** first, char* mname, int mvalue)
+static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, int state)
 {
 	int sl_cache;
 	
 	mem_get_int (first, &sl_cache, mname);
 	
-	sl_cache += mvalue;
+	switch (state)
+	{
+		case 0:
+			sl_cache += mvalue;
+			break;
+		case 1:
+			sl_cache -= mvalue;
+			break;
+		case 2:
+			sl_cache *= mvalue;
+			break;
+		case 3:
+			sl_cache /= mvalue;
+			break;
+		default:
+			break;
+	}
 	
 	sl_set_int (first, mname, sl_cache);
 }
 
-static void sl_add_int_var (struct sl_mem** first, char* mname, char* mvalue)
+static void sl_arithmetic_int_var (struct sl_mem** first, char* mname, char* mvalue, int state)
 {
 	int sl_cache;
 	
 	mem_get_int (first, &sl_cache, mvalue);
 	
-	sl_add_int (first, mname, sl_cache);
+	sl_arithmetic_int (first, mname, sl_cache, state);
 }
 
 static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
@@ -136,7 +152,9 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 static int read_file (char* filename)
 {
 	int sl_int;
+	int sl_argc;
 	char line[SL_LINEMAX], sl_str[100], sl_name[50], sl_cache[100];
+	char sl_function[50], sl_args[4][100];
 	char *token, *subtoken, *saveptr;
 	FILE *sl_file;
 	sl_core mcore;
@@ -159,193 +177,153 @@ static int read_file (char* filename)
 		
 		if (line[0] != '#')
 		{
-			token = strtok_r (line, SL_SEP, &saveptr);
+			if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
+			{
+				token = strtok_r (line, SL_SEP, &saveptr);
 		
-			if (parser_get_str (token, "print", sl_str, sizeof (sl_str), SL_SEP, saveptr) == 0)
-			{
-				sl_printf (sl_str);
+				if (parser_get_str (token, "print", sl_str, sizeof (sl_str), SL_SEP, saveptr) == 0)
+				{
+					sl_printf (sl_str);
+				}
 			}
-			else if (parser_get_str (token, "printm", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
+			else if (strstr (line, ":") != NULL && strstr (line, ";") != NULL)
 			{
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
-				{
-					strcpy (sl_name, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_str))
-				{
-					strcpy (sl_str, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+				token = strtok_r (line, SL_SEP, &saveptr);
 				
-				if (sl_name[0] != '$')
+				if (strlen (token) < sizeof (sl_function))
 				{
-					printf ("Names of variables starts with an $ !\n");
+					strcpy (sl_function, token);
 				}
-				else
+				
+				token = strtok_r (NULL, SL_SEP, &saveptr);
+				
+				if (strlen (token) < sizeof (sl_cache))
 				{
-					sl_printm (&first, sl_name, sl_str);
+					strcpy (sl_cache, token);
 				}
-			}
-			else if (parser_get_str (token, "int", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
-			{
+				
 				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
+				
+				sl_argc = 0;
+				while (subtoken != NULL)
 				{
-					strcpy (sl_name, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (isdigit (subtoken[0]) != 0)
-				{
-					sl_int = atoi (subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (sl_name[0] != '$')
-				{
-					printf ("Names of variables starts with an $ !\n");
-				}
-				else
-				{
-					sl_define_int (&mcore, &first, sl_name, sl_int);
-				}
-			}
-			else if (parser_get_str (token, "str", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
-			{
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
-				{
-					strcpy (sl_name, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_str))
-				{
-					strcpy (sl_str, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (sl_name[0] != '$')
-				{
-					printf ("Names of variables starts with an $ !\n");
-				}
-				else
-				{
-					sl_define_str (&mcore, &first, sl_name, sl_str);
-				}
-			}
-			else if (parser_get_str (token, "set", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
-			{
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
-				{
-					strcpy (sl_name, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_str))
-				{
-					strcpy (sl_str, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (sl_name[0] != '$')
-				{
-					printf ("Names of variables starts with an $ !\n");
-				}
-				else if (sl_str[0] == '$')
-				{
-					sl_set_int_var (&first, sl_name, sl_str);
-					sl_set_str_var (&first, sl_name, sl_str);
-				}
-				else
-				{
-					if (isdigit (sl_str[0]) != 0)
+					if (strlen (subtoken) < sizeof (sl_args[0]))
 					{
-						sl_set_int (&first, sl_name, atoi (sl_str));
+						strcpy (sl_args[sl_argc], subtoken);
 					}
 					
-					sl_set_str (&first, sl_name, sl_str);
-				}
-			}
-			else if (parser_get_str (token, "add", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
-			{
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
-				{
-					strcpy (sl_name, subtoken);
+					subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+					sl_argc++;
 				}
 			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_str))
+				if (utils_streq (sl_function, "int") == 0)
 				{
-					strcpy (sl_str, subtoken);
-				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (sl_name[0] != '$')
-				{
-					printf ("Names of variables starts with an $ !\n");
-				}
-				else if (sl_str[0] == '$')
-				{
-					sl_add_int_var (&first, sl_name, sl_str);
-				}
-				else
-				{
-					if (isdigit (sl_str[0]) != 0)
+					if (sl_args[0][0] != '$')
 					{
-						sl_add_int (&first, sl_name, atoi (sl_str));
+						printf ("Names of variables starts with an $ !\n");
 					}
 					else
 					{
-						printf ("ERROR: Not an integer!\n");
+						sl_define_int (&mcore, &first, sl_args[0], atoi (sl_args[1]));
 					}
 				}
-			}
-			else if (parser_get_str (token, "read", sl_cache, sizeof (sl_cache), SL_SEP, saveptr) == 0)
-			{
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_name))
+				else if (utils_streq (sl_function, "str") == 0)
 				{
-					strcpy (sl_name, subtoken);
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else
+					{
+						sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
+					}
 				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (strlen (subtoken) < sizeof (sl_str))
+				else if (utils_streq (sl_function, "set") == 0)
 				{
-					strcpy (sl_str, subtoken);
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else if (sl_args[1][0] == '$')
+					{
+						sl_set_int_var (&first, sl_args[0], sl_args[1]);
+						sl_set_str_var (&first, sl_args[0], sl_args[1]);
+					}
+					else
+					{
+						if (isdigit (sl_args[1][0]) != 0)
+						{
+							sl_set_int (&first, sl_args[0], atoi (sl_args[1]));
+						}
+					
+						sl_set_str (&first, sl_args[0], sl_args[1]);
+					}
 				}
-			
-				subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
-			
-				if (sl_name[0] != '$')
+				else if (utils_streq (sl_function, "printm") == 0)
 				{
-					printf ("Names of variables starts with an $ !\n");
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else
+					{
+						sl_printm (&first, sl_args[0], sl_args[1]);
+					}
 				}
-				else
+				else if (utils_streq (sl_function, "add") == 0)
 				{
-					sl_readm (&first, sl_name, sl_str);
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else if (sl_args[1][0] == '$')
+					{
+						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 0);
+					}
+					else
+					{
+						if (isdigit (sl_args[1][0]) != 0)
+						{
+							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 0);
+						}
+						else
+						{
+							printf ("ERROR: Not an integer!\n");
+						}
+					}
+				}
+				else if (utils_streq (sl_function, "sub") == 0)
+				{
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else if (sl_args[1][0] == '$')
+					{
+						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 1);
+					}
+					else
+					{
+						if (isdigit (sl_args[1][0]) != 0)
+						{
+							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 1);
+						}
+						else
+						{
+							printf ("ERROR: Not an integer!\n");
+						}
+					}
+				}
+				else if (utils_streq (sl_function, "read") == 0)
+				{
+					if (sl_args[0][0] != '$')
+					{
+						printf ("Names of variables starts with an $ !\n");
+					}
+					else
+					{
+						sl_readm (&first, sl_args[0], sl_args[1]);
+					}
 				}
 			}
 		}
