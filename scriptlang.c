@@ -205,7 +205,7 @@ static int read_file (char* filename)
 			strcpy (sl_args[i], "");
 		}
 				
-		if (line[0] != '#')
+		if (line[0] != '#' && utils_streq (line, "") != 0)
 		{
 			if (sl_ifstate == 1)
 			{
