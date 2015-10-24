@@ -1,4 +1,4 @@
-print:Starting add tests.\n
+print:Starting div tests.\n
 int:$i;180
 int:$j;30
 printm:$i;int
