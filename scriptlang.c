@@ -8,16 +8,21 @@
 
 static void sl_define_int (sl_core* mcore, struct sl_mem** first, char* mname, int mvalue)
 {
-	mem_insert (first, mcore->memcount, mcore->memcount, mvalue, "", mname);
+	mem_insert (first, mcore->memcount, MEM_TYPE_INT, mvalue, "", mname);
 	
 	mcore->memcount++;
 }
 
 static void sl_define_str (sl_core* mcore, struct sl_mem** first, char* mname, char* mvalue)
 {
-	mem_insert (first, mcore->memcount, mcore->memcount, 0, mvalue, mname);
+	mem_insert (first, mcore->memcount, MEM_TYPE_STR, 0, mvalue, mname);
 	
 	mcore->memcount++;
+}
+
+static void sl_set_uni (struct sl_mem** first, char* mname, char* mvalue)
+{
+	mem_set_uni (first, mvalue, mname);
 }
 
 static void sl_set_int (struct sl_mem** first, char* mname, int mvalue)
@@ -25,27 +30,14 @@ static void sl_set_int (struct sl_mem** first, char* mname, int mvalue)
 	mem_set_int (first, mvalue, mname);
 }
 
-static void sl_set_int_var (struct sl_mem** first, char* mname, char* mvalue)
-{
-	int sl_cache;
-	
-	mem_get_int (first, &sl_cache, mvalue);
-	
-	sl_set_int (first, mname, sl_cache);
-}
-
 static void sl_set_str (struct sl_mem** first, char* mname, char* mvalue)
 {
 	mem_set_str (first, mvalue, mname);
 }
 
-static void sl_set_str_var (struct sl_mem** first, char* mname, char* mvalue)
+static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 {
-	char sl_cache[50];
-	
-	mem_get_str (first, sl_cache, sizeof (sl_cache), mvalue);
-	
-	sl_set_str (first, mname, sl_cache);
+	mem_cpy_uni (first, mname_to, mname_from);
 }
 
 static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, int state)
@@ -91,13 +83,13 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	
 	sl_int = 0;
 	
-	if (utils_streq (mformat, "int") == 0)
+	if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{
 		scanf ("%i", &sl_int);
 		
 		mem_set_int (first, sl_int, mname);			
 	}
-	else if (utils_streq (mformat, "str") == 0)
+	else if (utils_streq (mformat, SL_WRD_STR) == 0)
 	{
 		scanf ("%s", sl_str);
 		
@@ -109,10 +101,11 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 {
 	int sl_int, sl_int_cache;
 	char sl_str[100], sl_str_cache[100];
+	struct sl_mem* ptr = NULL;
 	
 	sl_int = sl_int_cache = 0;
 	
-	if (utils_streq (mformat, "int") == 0)
+	if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{	
 		mem_get_int (first, &sl_int, mname);
 		
@@ -149,7 +142,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 				break;
 		}
 	}
-	else if (utils_streq (mformat, "str") == 0)
+	else if (utils_streq (mformat, SL_WRD_STR) == 0)
 	{
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 		
@@ -193,25 +186,25 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 	
 	sl_int = 0;
 	
-	if (utils_streq (mformat, "int") == 0)
+	if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{
 		mem_get_int (first, &sl_int, mname);
 		
 		printf ("%i", sl_int);
 	}
-	else if (utils_streq (mformat, "intn") == 0)
+	else if (utils_streq (mformat, SL_WRD_INTN) == 0)
 	{
 		mem_get_int (first, &sl_int, mname);
 		
 		printf ("%i\n", sl_int);
 	}
-	else if (utils_streq (mformat, "str") == 0)
+	else if (utils_streq (mformat, SL_WRD_STR) == 0)
 	{
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 				
 		sl_printf (sl_str);
 	}
-	else if (utils_streq (mformat, "strn") == 0)
+	else if (utils_streq (mformat, SL_WRD_STRN) == 0)
 	{
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 				
@@ -296,14 +289,14 @@ static int read_file (char* filename)
 				
 				if (sl_args[0][0] != SL_SYM_VAR)
 				{
-					printf ("Names of variables starts with an %c !\n", SL_SYM_VAR);
+					printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 				}
 			
-				if (utils_streq (sl_function, "int") == 0)
+				if (utils_streq (sl_function, SL_WRD_INT) == 0)
 				{
 					sl_define_int (&mcore, &first, sl_args[0], atoi (sl_args[1]));
 				}
-				else if (utils_streq (sl_function, "str") == 0)
+				else if (utils_streq (sl_function, SL_WRD_STR) == 0)
 				{
 					sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
 				}
@@ -311,17 +304,11 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_set_int_var (&first, sl_args[0], sl_args[1]);
-						sl_set_str_var (&first, sl_args[0], sl_args[1]);
+						sl_cpy_uni (&first, sl_args[0], sl_args[1]);
 					}
 					else
 					{
-						if (isdigit (sl_args[1][0]) != 0)
-						{
-							sl_set_int (&first, sl_args[0], atoi (sl_args[1]));
-						}
-					
-						sl_set_str (&first, sl_args[0], sl_args[1]);
+						sl_set_uni (&first, sl_args[0], sl_args[1]);
 					}
 				}
 				else if (utils_streq (sl_function, "printm") == 0)

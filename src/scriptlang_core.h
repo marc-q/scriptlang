@@ -11,6 +11,11 @@
 
 #define SL_SYM_VAR '$'
 
+#define SL_WRD_INT "int"
+#define SL_WRD_INTN "intn"
+#define SL_WRD_STR "str"
+#define SL_WRD_STRN "strn"
+
 #define BIGGEST(a,b) ((a>b) ? (a) : (b))
 
 struct _sl_core

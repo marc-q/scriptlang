@@ -7,6 +7,8 @@ printm:$testa;strn
 printm:$testb;strn
 set:$testb;$testa
 printm:$testb;strn
+set:$testa;Variable.
+printm:$testa;strn
 # 
 # Integer
 # 
@@ -18,3 +20,8 @@ set:$i;50
 printm:$i;intn
 set:$i;$j
 printm:$i;intn
+# 
+# Cpy
+# 
+print:Should be an error\n
+set:$i;$testa
