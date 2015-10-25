@@ -75,7 +75,7 @@ static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 	mem_cpy_uni (first, mname_to, mname_from);
 }
 
-static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, int state)
+static void sl_arithmetic (struct sl_mem** first, char* mname, sl_mem_var* mvar_two, int state)
 {
 	int mtype;
 	sl_mem_var mvar;
@@ -93,16 +93,16 @@ static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, i
 			switch (state)
 			{
 				case 0:
-					mvar.v_int += mvalue;
+					mvar.v_int += mvar_two->v_int;
 					break;
 				case 1:
-					mvar.v_int -= mvalue;
+					mvar.v_int -= mvar_two->v_int;
 					break;
 				case 2:
-					mvar.v_int *= mvalue;
+					mvar.v_int *= mvar_two->v_int;
 					break;
 				case 3:
-					mvar.v_int /= mvalue;
+					mvar.v_int /= mvar_two->v_int;
 					break;
 				default:
 					break;
@@ -112,16 +112,16 @@ static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, i
 			switch (state)
 			{
 				case 0:
-					mvar.v_float += mvalue;
+					mvar.v_float += mvar_two->v_float;
 					break;
 				case 1:
-					mvar.v_float -= mvalue;
+					mvar.v_float -= mvar_two->v_float;
 					break;
 				case 2:
-					mvar.v_float *= mvalue;
+					mvar.v_float *= mvar_two->v_float;
 					break;
 				case 3:
-					mvar.v_float /= mvalue;
+					mvar.v_float /= mvar_two->v_float;
 					break;
 				default:
 					break;
@@ -134,13 +134,14 @@ static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, i
 	mem_set_uni (first, &mvar, mname);
 }
 
-static void sl_arithmetic_int_var (struct sl_mem** first, char* mname, char* mvalue, int state)
+static void sl_arithmetic_var (struct sl_mem** first, char* mname, char* mvalue, int state)
 {
-	int sl_cache;
+	int mtype;
+	sl_mem_var mvar;
 	
-	mem_get_int (first, &sl_cache, mvalue);
+	mem_get_uni (first, &mvar, &mtype, mvalue);
 	
-	sl_arithmetic_int (first, mname, sl_cache, state);
+	sl_arithmetic (first, mname, &mvar, state);
 }
 
 static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
@@ -152,15 +153,11 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	sl_set_uni (first, mname, sl_str);
 }
 
-static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, char* mformat)
+static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue)
 {
 	int mtype, mtype_two;
-	int sl_int, sl_int_cache;
-	char sl_str[100], sl_str_cache[100];
 	struct sl_mem* ptr = NULL;
 	sl_mem_var mvar, mvar_two;
-	
-	sl_int = sl_int_cache = 0;
 	
 	if (mname[0] != SL_SYM_VAR)
 	{
@@ -174,7 +171,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 		case MEM_TYPE_INT:
 			if (mvalue[0] == SL_SYM_VAR)
 			{
-				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+				mem_get_uni (first, &mvar_two, &mtype_two, mvalue);
 			}
 			else if (isdigit (mvalue[0]) != 0)
 			{
@@ -215,7 +212,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 		case MEM_TYPE_FLOAT:
 			if (mvalue[0] == SL_SYM_VAR)
 			{
-				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+				mem_get_uni (first, &mvar_two, &mtype_two, mvalue);
 			}
 			else if (isdigit (mvalue[0]) != 0)
 			{
@@ -256,7 +253,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 		case MEM_TYPE_STR:
 			if (mvalue[0] == SL_SYM_VAR)
 			{
-				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+				mem_get_uni (first, &mvar_two, &mtype_two, mvalue);
 			}
 			else if (isalnum (mvalue[0]) != 0)
 			{
@@ -341,6 +338,7 @@ static int read_file (char* filename)
 	char *token, *subtoken, *saveptr, *saveptrsub;
 	FILE *sl_file;
 	sl_core mcore;
+	sl_mem_var mvar;
 	struct sl_mem *first = NULL;
 	
 	mcore.memcount = sl_ifstate = sl_funcstate = sl_seekpos = sl_preseekpos = 0;
@@ -456,11 +454,20 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 0);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 0);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
-						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 0);
+						if (strstr (sl_args[1], ".") == NULL)
+						{
+							mvar.v_int = atoi (sl_args[1]);
+						}
+						else
+						{
+							mvar.v_float = atol (sl_args[1]);
+						}
+						
+						sl_arithmetic (&first, sl_args[0], &mvar, 0);
 					}
 					else
 					{
@@ -471,11 +478,20 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 1);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 1);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
-						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 1);
+						if (strstr (sl_args[1], ".") == NULL)
+						{
+							mvar.v_int = atoi (sl_args[1]);
+						}
+						else
+						{
+							mvar.v_float = atol (sl_args[1]);
+						}
+						
+						sl_arithmetic (&first, sl_args[0], &mvar, 1);
 					}
 					else
 					{
@@ -486,11 +502,20 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 2);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 2);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
-						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 2);
+						if (strstr (sl_args[1], ".") == NULL)
+						{
+							mvar.v_int = atoi (sl_args[1]);
+						}
+						else
+						{
+							mvar.v_float = atol (sl_args[1]);
+						}
+						
+						sl_arithmetic (&first, sl_args[0], &mvar, 2);
 					}
 					else
 					{
@@ -501,11 +526,20 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 3);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 3);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
-						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 3);
+						if (strstr (sl_args[1], ".") == NULL)
+						{
+							mvar.v_int = atoi (sl_args[1]);
+						}
+						else
+						{
+							mvar.v_float = atol (sl_args[1]);
+						}
+						
+						sl_arithmetic (&first, sl_args[0], &mvar, 3);
 					}
 					else
 					{
@@ -518,7 +552,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "if") == 0)
 				{
-					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2], sl_args[3]) != 0)
+					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2]) != 0)
 					{
 						sl_ifstate = 1;
 					}		

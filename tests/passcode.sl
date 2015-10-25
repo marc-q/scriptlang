@@ -16,7 +16,7 @@ div:$puffer;$divisor
 set:$puffer2;$code
 div:$puffer2;$divisor
 
-if:$puffer;=;$puffer2;int
+if:$puffer;=;$puffer2
 print:X 
 else
 print:O 
@@ -45,6 +45,6 @@ set:$divisor;1
 checkdigit:;
 
 print:\n
-if:$input;=;$code;int
+if:$input;=;$code
 print:Success\n
 fi

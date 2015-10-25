@@ -13,7 +13,7 @@ printm:$i;intn
 #
 # Float
 #
-float:$j;0
+float:$j;0.0
 
 print:Type a number 
 read:$j;float

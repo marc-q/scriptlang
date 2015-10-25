@@ -51,7 +51,7 @@ int mem_insert (struct sl_mem** first, int n, int mtype, float mvalue_float, cha
 	switch (mtype)
 	{
 		case MEM_TYPE_INT:
-			newobj->m_value.v_int = mvalue_float;
+			newobj->m_value.v_int = (int) mvalue_float;
 			break;
 		case MEM_TYPE_FLOAT:
 			newobj->m_value.v_float = mvalue_float;
