@@ -105,12 +105,12 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	}
 }
 
-static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mformat)
+static int sl_if (struct sl_mem** first, char* mname, int mode, char* mvalue, char* mformat)
 {
 	int sl_int, sl_int_cache;
 	char sl_str[100], sl_str_cache[100];
 	
-	sl_int = 0;
+	sl_int = sl_int_cache = 0;
 	
 	if (utils_streq (mformat, "int") == 0)
 	{	
@@ -125,10 +125,29 @@ static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mforma
 			sl_int_cache = atoi (mvalue);
 		}
 		
-		if (sl_int == sl_int_cache)
+		switch (mode)
 		{
-			return 0;
-		}	
+			case 60:
+				if (sl_int < sl_int_cache)
+				{
+					return 0;
+				}
+				break;
+			case 61:
+				if (sl_int == sl_int_cache)
+				{
+					return 0;
+				}
+				break;
+			case 62:
+				if (sl_int > sl_int_cache)
+				{
+					return 0;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	else if (utils_streq (mformat, "str") == 0)
 	{
@@ -158,7 +177,7 @@ static void sl_printf (char* message)
 	
 	len = strlen (message);
 	
-	if (strlen (message) > 2 && message[len-2] == '\\' && message[len-1] == 'n')
+	if (strlen (message) > 1 && message[len-2] == '\\' && message[len-1] == 'n')
 	{
 		message[len-2] = ' ';
 		message[len-1] = '\n';
@@ -389,7 +408,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "if") == 0)
 				{
-						if (sl_if (&first, sl_args[0], sl_args[1], sl_args[2]) != 0)
+						if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2], sl_args[3]) != 0)
 						{
 							sl_ifstate = 1;
 						}		

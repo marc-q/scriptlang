@@ -1,12 +1,12 @@
 # 
 # String
 # 
-str:$testa;Variable testa.\n
-str:$testb;Variable testb.\n
-printm:$testa;str
-printm:$testb;str
+str:$testa;Variable testa.
+str:$testb;Variable testb.
+printm:$testa;strn
+printm:$testb;strn
 set:$testb;$testa
-printm:$testb;str
+printm:$testb;strn
 # 
 # Integer
 # 

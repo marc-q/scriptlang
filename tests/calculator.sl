@@ -19,19 +19,19 @@ read:$b;int
 print:\n
 printm:$a;int
 
-if:$form;1;int
+if:$form;=;1;int
 print: + 
 add:$a;$b
 fi
-if:$form;2;int
+if:$form;=;2;int
 print: - 
 sub:$a;$b
 fi
-if:$form;3;int
+if:$form;=;3;int
 print: * 
 mpl:$a;$b
 fi
-if:$form;4;int
+if:$form;=;4;int
 print: / 
 div:$a;$b
 fi
