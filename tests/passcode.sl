@@ -7,7 +7,7 @@ int:$puffer;0
 int:$puffer2;0
 int:$divisor;0
 
-# Function: checkdigits
+# Function: checkdigit
 def:checkdigit;void
 
 set:$puffer;$input
