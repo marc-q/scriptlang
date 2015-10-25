@@ -107,8 +107,8 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 
 static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mformat)
 {
-	int sl_int;
-	char sl_str[100];
+	int sl_int, sl_int_cache;
+	char sl_str[100], sl_str_cache[100];
 	
 	sl_int = 0;
 	
@@ -116,7 +116,16 @@ static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mforma
 	{	
 		mem_get_int (first, &sl_int, mname);
 		
-		if (sl_int == atoi (mvalue))
+		if (mvalue[0] == '$')
+		{
+			mem_get_int (first, &sl_int_cache, mvalue);
+		}
+		else if (isdigit (mvalue[0]) != 0)
+		{
+			sl_int_cache = atoi (mvalue);
+		}
+		
+		if (sl_int == sl_int_cache)
 		{
 			return 0;
 		}	
@@ -125,7 +134,16 @@ static int sl_if (struct sl_mem** first, char* mname, char* mvalue, char* mforma
 	{
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 		
-		if (utils_streq (sl_str, mvalue) == 0)
+		if (mvalue[0] == '$')
+		{
+			mem_get_str (first, sl_str_cache, sizeof (sl_str_cache), mvalue);
+		}
+		else if (isalnum (mvalue[0]) != 0)
+		{
+			strcpy (sl_str_cache, mvalue);
+		}
+		
+		if (utils_streq (sl_str, sl_str_cache) == 0)
 		{
 			return 0;
 		}
