@@ -28,7 +28,7 @@ void mem_free_ll (struct sl_mem** first)
 	Description: Inserts a new mem object with data.
 	InitVersion: 0.0.1
 */
-int mem_insert (struct sl_mem** first, int n, int mtype, int mvalue_int, char* mvalue_str, char* mname)
+int mem_insert (struct sl_mem** first, int n, int mtype, float mvalue_float, char* mvalue_str, char* mname)
 {
 	struct sl_mem *newobj = malloc (sizeof (struct sl_mem)), *preobj;
 	
@@ -51,7 +51,10 @@ int mem_insert (struct sl_mem** first, int n, int mtype, int mvalue_int, char* m
 	switch (mtype)
 	{
 		case MEM_TYPE_INT:
-			newobj->m_value.v_int = mvalue_int;
+			newobj->m_value.v_int = mvalue_float;
+			break;
+		case MEM_TYPE_FLOAT:
+			newobj->m_value.v_float = mvalue_float;
 			break;
 		case MEM_TYPE_STR:
 			strcpy (newobj->m_value.v_str, mvalue_str);
@@ -135,7 +138,57 @@ int mem_remove (struct sl_mem** first, char* mname)
 	return 0;
 }
 
-int mem_set_uni (struct sl_mem** first, char* mvalue, char* mname)
+int mem_set_uni (struct sl_mem** first, sl_mem_var* mvar, char* mname)
+{
+	int state;
+	struct sl_mem* ptr = *first;
+	
+	state = 0;
+	
+	if (ptr == NULL)
+	{
+		return -1;
+	}
+	
+	while (ptr != NULL)
+	{
+		if (utils_streq (ptr->m_name, mname) == 0)
+		{
+			switch (ptr->m_type)
+			{
+				case MEM_TYPE_INT:
+					ptr->m_value.v_int = mvar->v_int;
+					break;
+				case MEM_TYPE_FLOAT:
+					ptr->m_value.v_float = mvar->v_float;
+					break;
+				case MEM_TYPE_STR:
+					if (strlen (mvar->v_str) < MEM_S_VALUE)
+					{
+						strcpy (ptr->m_value.v_str, mvar->v_str);
+					}
+					break;
+				default:
+					break;
+			}
+			
+			state = 1;
+			break;
+		}
+		
+		ptr = ptr->next;
+	}
+	
+	if (state == 0)
+	{
+		printf ("ERROR: Variable not found!\n");
+		return -2;
+	}
+	
+	return 0;
+}
+
+int mem_set_uni2 (struct sl_mem** first, char* mvalue, char* mname)
 {
 	int state;
 	struct sl_mem* ptr = *first;
@@ -154,6 +207,10 @@ int mem_set_uni (struct sl_mem** first, char* mvalue, char* mname)
 			if (ptr->m_type == MEM_TYPE_INT && isdigit (mvalue[0]) != 0)
 			{
 				ptr->m_value.v_int = atoi (mvalue);
+			}
+			else if (ptr->m_type == MEM_TYPE_FLOAT && isdigit (mvalue[0]) != 0)
+			{
+				ptr->m_value.v_float = atof (mvalue);
 			}
 			else if (ptr->m_type == MEM_TYPE_STR && strlen (mvalue) < MEM_S_VALUE)
 			{
@@ -205,6 +262,10 @@ int mem_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 			{
 				to->m_value.v_int = from->m_value.v_int;
 			}
+			else if (to->m_type == MEM_TYPE_FLOAT && from->m_type == MEM_TYPE_FLOAT)
+			{
+				to->m_value.v_float = from->m_value.v_float;
+			}
 			else if (to->m_type == MEM_TYPE_STR && from->m_type == MEM_TYPE_STR &&
 			         strlen (from->m_value.v_str) < MEM_S_VALUE)
 			{
@@ -231,7 +292,7 @@ int mem_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 	return 0;
 }
 
-int mem_set_int (struct sl_mem** first, int mvalue, char* mname)
+int mem_get_uni (struct sl_mem** first, sl_mem_var* out, int* mtype, char* mname)
 {
 	int state;
 	struct sl_mem* ptr = *first;
@@ -247,48 +308,24 @@ int mem_set_int (struct sl_mem** first, int mvalue, char* mname)
 	{
 		if (utils_streq (ptr->m_name, mname) == 0)
 		{
-			ptr->m_value.v_int = mvalue;
+			*mtype = ptr->m_type;
 			
-			state = 1;
-			
-			break;
-		}
-		
-		ptr = ptr->next;
-	}
-	
-	if (state == 0)
-	{
-		printf ("ERROR: Variable not found!\n");
-		return -2;
-	}
-	
-	return 0;
-}
-
-int mem_set_str (struct sl_mem** first, char* mvalue, char* mname)
-{
-	int state;
-	struct sl_mem* ptr = *first;
-	
-	state = 0;
-	
-	if (ptr == NULL)
-	{
-		return -1;
-	}
-	
-	while (ptr != NULL)
-	{
-		if (utils_streq (ptr->m_name, mname) == 0)
-		{
-			if (strlen (mvalue) < MEM_S_VALUE)
+			if (ptr->m_type == MEM_TYPE_INT)
 			{
-				strcpy (ptr->m_value.v_str, mvalue);
-				
-				state = 1;
+				out->v_int = ptr->m_value.v_int;
+			}
+			else if (ptr->m_type == MEM_TYPE_FLOAT)
+			{
+				out->v_float = ptr->m_value.v_float;
+			}
+			else if (ptr->m_type == MEM_TYPE_STR && strlen (ptr->m_value.v_str) < MEM_S_VALUE)
+			{
+				strcpy (out->v_str, ptr->m_value.v_str);
 			}
 			
+			
+			
+			state = 1;
 			break;
 		}
 		
@@ -297,7 +334,7 @@ int mem_set_str (struct sl_mem** first, char* mvalue, char* mname)
 	
 	if (state == 0)
 	{
-		printf ("ERROR: Variable not found!\n");
+		printf ("ERROR: Variable not found!");
 		return -2;
 	}
 	
@@ -333,39 +370,6 @@ int mem_get_int (struct sl_mem** first, int* out, char* mname)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!");
-		return -2;
-	}
-	
-	return 0;
-}
-
-int mem_get_str (struct sl_mem** first, char* out, size_t outsize, char* mname)
-{
-	struct sl_mem* ptr = *first;
-	
-	if (ptr == NULL)
-	{
-		return -1;
-	}
-	
-	while (ptr != NULL)
-	{
-		if (utils_streq (ptr->m_name, mname) == 0)
-		{
-			if (strlen (ptr->m_value.v_str) < outsize)
-			{
-				strcpy (out, ptr->m_value.v_str);
-			}
-			
-			break;
-		}
-		
-		ptr = ptr->next;
-	}
-	
-	if (strcmp (out, "") == 0)
-	{
-		strcpy (out, "ERROR: Variable not found!");
 		return -2;
 	}
 	

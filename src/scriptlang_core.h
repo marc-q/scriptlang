@@ -13,6 +13,8 @@
 
 #define SL_WRD_INT "int"
 #define SL_WRD_INTN "intn"
+#define SL_WRD_FLOAT "float"
+#define SL_WRD_FLOATN "floatn"
 #define SL_WRD_STR "str"
 #define SL_WRD_STRN "strn"
 

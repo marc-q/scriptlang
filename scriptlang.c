@@ -18,6 +18,19 @@ static void sl_define_int (sl_core* mcore, struct sl_mem** first, char* mname, i
 	mcore->memcount++;
 }
 
+static void sl_define_float (sl_core* mcore, struct sl_mem** first, char* mname, float mvalue)
+{
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
+	mem_insert (first, mcore->memcount, MEM_TYPE_FLOAT, mvalue, "", mname);
+	
+	mcore->memcount++;
+}
+
+
 static void sl_define_str (sl_core* mcore, struct sl_mem** first, char* mname, char* mvalue)
 {
 	if (mname[0] != SL_SYM_VAR)
@@ -49,27 +62,7 @@ static void sl_set_uni (struct sl_mem** first, char* mname, char* mvalue)
 		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 	}
 	
-	mem_set_uni (first, mvalue, mname);
-}
-
-static void sl_set_int (struct sl_mem** first, char* mname, int mvalue)
-{
-	if (mname[0] != SL_SYM_VAR)
-	{
-		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
-	}
-	
-	mem_set_int (first, mvalue, mname);
-}
-
-static void sl_set_str (struct sl_mem** first, char* mname, char* mvalue)
-{
-	if (mname[0] != SL_SYM_VAR)
-	{
-		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
-	}
-	
-	mem_set_str (first, mvalue, mname);
+	mem_set_uni2 (first, mvalue, mname);
 }
 
 static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
@@ -84,34 +77,61 @@ static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 
 static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, int state)
 {
-	int sl_cache;
+	int mtype;
+	sl_mem_var mvar;
 	
 	if (mname[0] != SL_SYM_VAR)
 	{
 		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 	}
 	
-	mem_get_int (first, &sl_cache, mname);
+	mem_get_uni (first, &mvar, &mtype, mname);
 	
-	switch (state)
+	switch (mtype)
 	{
-		case 0:
-			sl_cache += mvalue;
+		case MEM_TYPE_INT:
+			switch (state)
+			{
+				case 0:
+					mvar.v_int += mvalue;
+					break;
+				case 1:
+					mvar.v_int -= mvalue;
+					break;
+				case 2:
+					mvar.v_int *= mvalue;
+					break;
+				case 3:
+					mvar.v_int /= mvalue;
+					break;
+				default:
+					break;
+			}
 			break;
-		case 1:
-			sl_cache -= mvalue;
-			break;
-		case 2:
-			sl_cache *= mvalue;
-			break;
-		case 3:
-			sl_cache /= mvalue;
+		case MEM_TYPE_FLOAT:
+			switch (state)
+			{
+				case 0:
+					mvar.v_float += mvalue;
+					break;
+				case 1:
+					mvar.v_float -= mvalue;
+					break;
+				case 2:
+					mvar.v_float *= mvalue;
+					break;
+				case 3:
+					mvar.v_float /= mvalue;
+					break;
+				default:
+					break;
+			}
 			break;
 		default:
 			break;
 	}
 	
-	sl_set_int (first, mname, sl_cache);
+	mem_set_uni (first, &mvar, mname);
 }
 
 static void sl_arithmetic_int_var (struct sl_mem** first, char* mname, char* mvalue, int state)
@@ -125,34 +145,20 @@ static void sl_arithmetic_int_var (struct sl_mem** first, char* mname, char* mva
 
 static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 {
-	int sl_int;
 	char sl_str[100];
 	
-	sl_int = 0;
+	scanf ("%s", sl_str);
 	
-	if (mname[0] != SL_SYM_VAR)
-	{
-		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
-	}
-	else if (utils_streq (mformat, SL_WRD_INT) == 0)
-	{
-		scanf ("%i", &sl_int);
-		
-		mem_set_int (first, sl_int, mname);			
-	}
-	else if (utils_streq (mformat, SL_WRD_STR) == 0)
-	{
-		scanf ("%s", sl_str);
-		
-		mem_set_str (first, sl_str, mname);
-	}
+	sl_set_uni (first, mname, sl_str);
 }
 
 static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, char* mformat)
 {
+	int mtype, mtype_two;
 	int sl_int, sl_int_cache;
 	char sl_str[100], sl_str_cache[100];
 	struct sl_mem* ptr = NULL;
+	sl_mem_var mvar, mvar_two;
 	
 	sl_int = sl_int_cache = 0;
 	
@@ -160,60 +166,111 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 	{
 		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 	}
-	else if (utils_streq (mformat, SL_WRD_INT) == 0)
-	{	
-		mem_get_int (first, &sl_int, mname);
-		
-		if (mvalue[0] == SL_SYM_VAR)
-		{
-			mem_get_int (first, &sl_int_cache, mvalue);
-		}
-		else if (isdigit (mvalue[0]) != 0)
-		{
-			sl_int_cache = atoi (mvalue);
-		}
-		
-		switch (mmode)
-		{
-			case '<':
-				if (sl_int < sl_int_cache)
-				{
-					return 0;
-				}
-				break;
-			case '=':
-				if (sl_int == sl_int_cache)
-				{
-					return 0;
-				}
-				break;
-			case '>':
-				if (sl_int > sl_int_cache)
-				{
-					return 0;
-				}
-				break;
-			default:
-				break;
-		}
-	}
-	else if (utils_streq (mformat, SL_WRD_STR) == 0)
+	
+	mem_get_uni (first, &mvar, &mtype, mname);
+	
+	switch (mtype)
 	{
-		mem_get_str (first, sl_str, sizeof (sl_str), mname);
+		case MEM_TYPE_INT:
+			if (mvalue[0] == SL_SYM_VAR)
+			{
+				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+			}
+			else if (isdigit (mvalue[0]) != 0)
+			{
+				mvar_two.v_int = atoi (mvalue);
+				mtype_two = MEM_TYPE_INT;
+			}
+			
+			if (mtype != mtype_two)
+			{
+				printf ("ERROR: Variables have different types!\n");
+				return 0;
+			}
 		
-		if (mvalue[0] == SL_SYM_VAR)
-		{
-			mem_get_str (first, sl_str_cache, sizeof (sl_str_cache), mvalue);
-		}
-		else if (isalnum (mvalue[0]) != 0)
-		{
-			strcpy (sl_str_cache, mvalue);
-		}
+			switch (mmode)
+			{
+				case '<':
+					if (mvar.v_int < mvar_two.v_int)
+					{
+						return 0;
+					}
+					break;
+				case '=':
+					if (mvar.v_int == mvar_two.v_int)
+					{
+						return 0;
+					}
+					break;
+				case '>':
+					if (mvar.v_int > mvar_two.v_int)
+					{
+						return 0;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case MEM_TYPE_FLOAT:
+			if (mvalue[0] == SL_SYM_VAR)
+			{
+				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+			}
+			else if (isdigit (mvalue[0]) != 0)
+			{
+				mvar_two.v_float = atof (mvalue);
+				mtype_two = MEM_TYPE_FLOAT;
+			}
+			
+			if (mtype != mtype_two)
+			{
+				printf ("ERROR: Variables have different types!\n");
+				return 0;
+			}
 		
-		if (utils_streq (sl_str, sl_str_cache) == 0)
-		{
-			return 0;
-		}
+			switch (mmode)
+			{
+				case '<':
+					if (mvar.v_float < mvar_two.v_float)
+					{
+						return 0;
+					}
+					break;
+				case '=':
+					if (mvar.v_float == mvar_two.v_float)
+					{
+						return 0;
+					}
+					break;
+				case '>':
+					if (mvar.v_float > mvar_two.v_float)
+					{
+						return 0;
+					}
+					break;
+				default:
+					break;
+			}
+			break;
+		case MEM_TYPE_STR:
+			if (mvalue[0] == SL_SYM_VAR)
+			{
+				mem_get_uni (first, &mvar, &mtype_two, mvalue);
+			}
+			else if (isalnum (mvalue[0]) != 0)
+			{
+				strcpy (mvar_two.v_str, mvalue);
+				mtype_two = MEM_TYPE_STR;
+			}
+		
+			if (utils_streq (mvar.v_str, mvar_two.v_str) == 0)
+			{
+				return 0;
+			}
+			break;
+		default:
+			break;
 	}
 	
 	return 1;
@@ -234,41 +291,47 @@ static void sl_printf (char* message)
 	printf ("%s", message);
 }
 
-static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
+static int sl_printm (struct sl_mem** first, char* mname, char* mformat)
 {
-	int sl_int;
-	char sl_str[100];
+	int mtype;
+	sl_mem_var mvar;
 	
-	sl_int = 0;
+	mtype = 0;
 	
 	if (mname[0] != SL_SYM_VAR)
 	{
 		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+		return -1;
 	}
-	else if (utils_streq (mformat, SL_WRD_INT) == 0)
+
+	mem_get_uni (first, &mvar, &mtype, mname);
+
+	if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{
-		mem_get_int (first, &sl_int, mname);
-		
-		printf ("%i", sl_int);
+		printf ("%i", mvar.v_int);
 	}
 	else if (utils_streq (mformat, SL_WRD_INTN) == 0)
 	{
-		mem_get_int (first, &sl_int, mname);
-		
-		printf ("%i\n", sl_int);
+		printf ("%i\n", mvar.v_int);
+	}
+	else if (utils_streq (mformat, SL_WRD_FLOAT) == 0)
+	{
+		printf ("%f", mvar.v_float);
+	}
+	else if (utils_streq (mformat, SL_WRD_FLOATN) == 0)
+	{
+		printf ("%f\n", mvar.v_float);
 	}
 	else if (utils_streq (mformat, SL_WRD_STR) == 0)
-	{
-		mem_get_str (first, sl_str, sizeof (sl_str), mname);
-				
-		sl_printf (sl_str);
+	{		
+		sl_printf (mvar.v_str);
 	}
 	else if (utils_streq (mformat, SL_WRD_STRN) == 0)
-	{
-		mem_get_str (first, sl_str, sizeof (sl_str), mname);
-				
-		printf ("%s\n", sl_str);
+	{	
+		printf ("%s\n", mvar.v_str);
 	}
+	
+	return 0;
 }
 
 static int read_file (char* filename)
@@ -365,6 +428,10 @@ static int read_file (char* filename)
 				if (utils_streq (sl_function, SL_WRD_INT) == 0)
 				{
 					sl_define_int (&mcore, &first, sl_args[0], atoi (sl_args[1]));
+				}
+				else if (utils_streq (sl_function, SL_WRD_FLOAT) == 0)
+				{
+					sl_define_float (&mcore, &first, sl_args[0], atof (sl_args[1]));
 				}
 				else if (utils_streq (sl_function, SL_WRD_STR) == 0)
 				{
