@@ -105,7 +105,7 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	}
 }
 
-static int sl_if (struct sl_mem** first, char* mname, int mode, char* mvalue, char* mformat)
+static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, char* mformat)
 {
 	int sl_int, sl_int_cache;
 	char sl_str[100], sl_str_cache[100];
@@ -125,21 +125,21 @@ static int sl_if (struct sl_mem** first, char* mname, int mode, char* mvalue, ch
 			sl_int_cache = atoi (mvalue);
 		}
 		
-		switch (mode)
+		switch (mmode)
 		{
-			case 60:
+			case '<':
 				if (sl_int < sl_int_cache)
 				{
 					return 0;
 				}
 				break;
-			case 61:
+			case '=':
 				if (sl_int == sl_int_cache)
 				{
 					return 0;
 				}
 				break;
-			case 62:
+			case '>':
 				if (sl_int > sl_int_cache)
 				{
 					return 0;
@@ -198,14 +198,12 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 		mem_get_int (first, &sl_int, mname);
 		
 		printf ("%i", sl_int);
-					
 	}
 	else if (utils_streq (mformat, "intn") == 0)
 	{
 		mem_get_int (first, &sl_int, mname);
 		
 		printf ("%i\n", sl_int);
-					
 	}
 	else if (utils_streq (mformat, "str") == 0)
 	{
@@ -225,7 +223,7 @@ static int read_file (char* filename)
 {
 	int i, sl_argc, sl_ifstate;
 	char line[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
-	char *token, *subtoken, *saveptr;
+	char *token, *subtoken, *saveptr, *saveptrsub;
 	FILE *sl_file;
 	sl_core mcore;
 	struct sl_mem *first = NULL;
@@ -282,7 +280,7 @@ static int read_file (char* filename)
 					strcpy (sl_cache, token);
 				}
 				
-				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptr);
+				subtoken = strtok_r (sl_cache, SL_SEP_SUB, &saveptrsub);
 				
 				sl_argc = 0;
 				while (subtoken != NULL)
@@ -292,7 +290,7 @@ static int read_file (char* filename)
 						strcpy (sl_args[sl_argc], subtoken);
 					}
 					
-					subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptr);
+					subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptrsub);
 					sl_argc++;
 				}
 				
@@ -307,7 +305,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "str") == 0)
 				{
-						sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
+					sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
 				}
 				else if (utils_streq (sl_function, "set") == 0)
 				{
@@ -328,7 +326,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "printm") == 0)
 				{
-						sl_printm (&first, sl_args[0], sl_args[1]);
+					sl_printm (&first, sl_args[0], sl_args[1]);
 				}
 				else if (utils_streq (sl_function, "add") == 0)
 				{
@@ -336,16 +334,13 @@ static int read_file (char* filename)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 0);
 					}
+					else if (isdigit (sl_args[1][0]) != 0)
+					{
+						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 0);
+					}
 					else
 					{
-						if (isdigit (sl_args[1][0]) != 0)
-						{
-							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 0);
-						}
-						else
-						{
-							printf ("ERROR: Not an integer!\n");
-						}
+						printf ("ERROR: Not an integer!\n");
 					}
 				}
 				else if (utils_streq (sl_function, "sub") == 0)
@@ -354,16 +349,13 @@ static int read_file (char* filename)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 1);
 					}
+					else if (isdigit (sl_args[1][0]) != 0)
+					{
+						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 1);
+					}
 					else
 					{
-						if (isdigit (sl_args[1][0]) != 0)
-						{
-							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 1);
-						}
-						else
-						{
-							printf ("ERROR: Not an integer!\n");
-						}
+						printf ("ERROR: Not an integer!\n");
 					}
 				}
 				else if (utils_streq (sl_function, "mpl") == 0)
@@ -372,16 +364,13 @@ static int read_file (char* filename)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 2);
 					}
+					else if (isdigit (sl_args[1][0]) != 0)
+					{
+						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 2);
+					}
 					else
 					{
-						if (isdigit (sl_args[1][0]) != 0)
-						{
-							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 2);
-						}
-						else
-						{
-							printf ("ERROR: Not an integer!\n");
-						}
+						printf ("ERROR: Not an integer!\n");
 					}
 				}
 				else if (utils_streq (sl_function, "div") == 0)
@@ -390,28 +379,25 @@ static int read_file (char* filename)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 3);
 					}
+					else if (isdigit (sl_args[1][0]) != 0)
+					{
+						sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 3);
+					}
 					else
 					{
-						if (isdigit (sl_args[1][0]) != 0)
-						{
-							sl_arithmetic_int (&first, sl_args[0], atoi (sl_args[1]), 3);
-						}
-						else
-						{
-							printf ("ERROR: Not an integer!\n");
-						}
+						printf ("ERROR: Not an integer!\n");
 					}
 				}
 				else if (utils_streq (sl_function, "read") == 0)
 				{
-						sl_readm (&first, sl_args[0], sl_args[1]);
+					sl_readm (&first, sl_args[0], sl_args[1]);
 				}
 				else if (utils_streq (sl_function, "if") == 0)
 				{
-						if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2], sl_args[3]) != 0)
-						{
-							sl_ifstate = 1;
-						}		
+					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2], sl_args[3]) != 0)
+					{
+						sl_ifstate = 1;
+					}		
 				}
 			}
 		}
