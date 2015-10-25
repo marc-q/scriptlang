@@ -312,9 +312,13 @@ static int read_file (char* filename)
 					sl_funcstate = 0;
 				}
 			}
-			else if (sl_ifstate == 1)
+			else if (sl_ifstate == 1 || utils_streq (line, "else\n") == 0)
 			{
-				if (utils_streq (line, "fi\n") == 0)
+				if (sl_ifstate == 0)
+				{
+					sl_ifstate = 1;
+				}
+				else if (utils_streq (line, "fi\n") == 0 || utils_streq (line, "else\n") == 0)
 				{
 					sl_ifstate = 0;
 				}
