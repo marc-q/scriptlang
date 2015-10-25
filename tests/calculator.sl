@@ -21,31 +21,21 @@ printm:$a;int
 
 if:$form;1;int
 print: + 
+add:$a;$b
 fi
 if:$form;2;int
 print: - 
+sub:$a;$b
 fi
 if:$form;3;int
 print: * 
+mpl:$a;$b
 fi
 if:$form;4;int
 print: / 
+div:$a;$b
 fi
 
 printm:$b;int
 print: = 
-
-if:$form;1;int
-add:$a;$b
-fi
-if:$form;2;int
-sub:$a;$b
-fi
-if:$form;3;int
-mpl:$a;$b
-fi
-if:$form;4;int
-div:$a;$b
-fi
-
 printm:$a;intn
