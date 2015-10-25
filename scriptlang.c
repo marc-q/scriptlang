@@ -8,6 +8,11 @@
 
 static void sl_define_int (sl_core* mcore, struct sl_mem** first, char* mname, int mvalue)
 {
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_insert (first, mcore->memcount, MEM_TYPE_INT, mvalue, "", mname);
 	
 	mcore->memcount++;
@@ -15,34 +20,76 @@ static void sl_define_int (sl_core* mcore, struct sl_mem** first, char* mname, i
 
 static void sl_define_str (sl_core* mcore, struct sl_mem** first, char* mname, char* mvalue)
 {
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_insert (first, mcore->memcount, MEM_TYPE_STR, 0, mvalue, mname);
+	
+	mcore->memcount++;
+}
+
+static void sl_define_function (sl_core* mcore, struct sl_mem** first, char* mname, int mseekpos)
+{
+	if (mname[0] == SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of functions dont starts with an %c !\n", SL_SYM_VAR);
+	}
+	
+	mem_insert (first, mcore->memcount, MEM_TYPE_INT, mseekpos, "", mname);
 	
 	mcore->memcount++;
 }
 
 static void sl_set_uni (struct sl_mem** first, char* mname, char* mvalue)
 {
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_set_uni (first, mvalue, mname);
 }
 
 static void sl_set_int (struct sl_mem** first, char* mname, int mvalue)
 {
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_set_int (first, mvalue, mname);
 }
 
 static void sl_set_str (struct sl_mem** first, char* mname, char* mvalue)
 {
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_set_str (first, mvalue, mname);
 }
 
 static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 {
+	if (mname_to[0] != SL_SYM_VAR || mname_from[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
 	mem_cpy_uni (first, mname_to, mname_from);
 }
 
 static void sl_arithmetic_int (struct sl_mem** first, char* mname, int mvalue, int state)
 {
 	int sl_cache;
+	
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
 	
 	mem_get_int (first, &sl_cache, mname);
 	
@@ -83,7 +130,11 @@ static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
 	
 	sl_int = 0;
 	
-	if (utils_streq (mformat, SL_WRD_INT) == 0)
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	else if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{
 		scanf ("%i", &sl_int);
 		
@@ -105,7 +156,11 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 	
 	sl_int = sl_int_cache = 0;
 	
-	if (utils_streq (mformat, SL_WRD_INT) == 0)
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	else if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{	
 		mem_get_int (first, &sl_int, mname);
 		
@@ -186,7 +241,11 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 	
 	sl_int = 0;
 	
-	if (utils_streq (mformat, SL_WRD_INT) == 0)
+	if (mname[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	else if (utils_streq (mformat, SL_WRD_INT) == 0)
 	{
 		mem_get_int (first, &sl_int, mname);
 		
@@ -214,14 +273,14 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 
 static int read_file (char* filename)
 {
-	int i, sl_argc, sl_ifstate;
+	int i, sl_argc, sl_ifstate, sl_funcstate, sl_seekpos, sl_preseekpos;
 	char line[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
 	char *token, *subtoken, *saveptr, *saveptrsub;
 	FILE *sl_file;
 	sl_core mcore;
 	struct sl_mem *first = NULL;
 	
-	mcore.memcount = sl_ifstate = 0;
+	mcore.memcount = sl_ifstate = sl_funcstate = sl_seekpos = sl_preseekpos = 0;
 	
 	sl_file = fopen (filename, "r");
 	
@@ -241,7 +300,19 @@ static int read_file (char* filename)
 				
 		if (line[0] != '#' && utils_streq (line, "") != 0)
 		{
-			if (sl_ifstate == 1)
+			if (sl_funcstate == 1 || utils_streq (line, "fed\n") == 0)
+			{
+				if (sl_funcstate == 2)
+				{
+					fseek (sl_file, sl_preseekpos, SEEK_SET);
+					sl_funcstate = 0;
+				}
+				else if (utils_streq (line, "fed\n") == 0)
+				{
+					sl_funcstate = 0;
+				}
+			}
+			else if (sl_ifstate == 1)
 			{
 				if (utils_streq (line, "fi\n") == 0)
 				{
@@ -251,7 +322,7 @@ static int read_file (char* filename)
 			else if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
-		
+				
 				if (parser_get_str (token, "print", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					sl_printf (sl_args[0]);
@@ -285,11 +356,6 @@ static int read_file (char* filename)
 					
 					subtoken = strtok_r (NULL, SL_SEP_SUB, &saveptrsub);
 					sl_argc++;
-				}
-				
-				if (sl_args[0][0] != SL_SYM_VAR)
-				{
-					printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 				}
 			
 				if (utils_streq (sl_function, SL_WRD_INT) == 0)
@@ -385,6 +451,17 @@ static int read_file (char* filename)
 					{
 						sl_ifstate = 1;
 					}		
+				}
+				else if (utils_streq (sl_function, "def") == 0)
+				{
+					sl_define_function (&mcore, &first, sl_args[0], ftell (sl_file));
+					sl_funcstate = 1;	
+				}
+				else if (mem_get_int (&first, &sl_seekpos, sl_function) == 0)
+				{
+					sl_preseekpos = ftell (sl_file);
+					fseek (sl_file, sl_seekpos, SEEK_SET);
+					sl_funcstate = 2;
 				}
 			}
 		}

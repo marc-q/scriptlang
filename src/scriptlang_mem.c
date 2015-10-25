@@ -170,6 +170,7 @@ int mem_set_uni (struct sl_mem** first, char* mvalue, char* mname)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!\n");
+		return -2;
 	}
 	
 	return 0;
@@ -224,6 +225,7 @@ int mem_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!\n");
+		return -2;
 	}
 	
 	return 0;
@@ -258,6 +260,7 @@ int mem_set_int (struct sl_mem** first, int mvalue, char* mname)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!\n");
+		return -2;
 	}
 	
 	return 0;
@@ -295,6 +298,7 @@ int mem_set_str (struct sl_mem** first, char* mvalue, char* mname)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!\n");
+		return -2;
 	}
 	
 	return 0;
@@ -329,6 +333,7 @@ int mem_get_int (struct sl_mem** first, int* out, char* mname)
 	if (state == 0)
 	{
 		printf ("ERROR: Variable not found!");
+		return -2;
 	}
 	
 	return 0;
@@ -361,6 +366,7 @@ int mem_get_str (struct sl_mem** first, char* out, size_t outsize, char* mname)
 	if (strcmp (out, "") == 0)
 	{
 		strcpy (out, "ERROR: Variable not found!");
+		return -2;
 	}
 	
 	return 0;

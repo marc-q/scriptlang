@@ -8,7 +8,7 @@ int:$form;0
 print:Calculator\n
 
 print:Addition 1, Substraction 2, Multiplication 3, Division 4\n
-print:Type the what do you want to do 
+print:Type what do you want to do 
 read:$form;int
 
 print:Type the first number 
