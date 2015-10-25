@@ -4,6 +4,22 @@
 int:$code;12145
 int:$input;0
 int:$puffer;0
+int:$puffer2;0
+int:$divisor;0
+
+# Function: checkdigits
+def:checkdigit;void
+
+set:$puffer;$input
+div:$puffer;$divisor
+
+set:$puffer2;$code
+div:$puffer2;$divisor
+
+if:$puffer;=;$puffer2;int
+print:X\n
+fi
+fed
 
 print:Passcode!\n
 print:Find the right number!\n
@@ -11,40 +27,20 @@ print:Find the right number!\n
 print:Your guess 
 read:$input;int
 
-set:$puffer;$input
-div:$puffer;10000
+set:$divisor;10000
+checkdigit:;
 
-if:$puffer;=;1;int
-print:X\n
-fi
+set:$divisor;1000
+checkdigit:;
 
-set:$puffer;$input
-div:$puffer;1000
+set:$divisor;100
+checkdigit:;
 
-if:$puffer;=;12;int
-print:X\n
-fi
+set:$divisor;10
+checkdigit:;
 
-set:$puffer;$input
-div:$puffer;100
-
-if:$puffer;=;121;int
-print:X\n
-fi
-
-set:$puffer;$input
-div:$puffer;10
-
-if:$puffer;=;1214;int
-print:X\n
-fi
-
-set:$puffer;$input
-div:$puffer;1
-
-if:$puffer;=;12145;int
-print:X\n
-fi
+set:$divisor;1
+checkdigit:;
 
 if:$input;=;$code;int
 print:Success\n
