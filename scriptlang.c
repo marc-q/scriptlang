@@ -140,7 +140,7 @@ static void sl_printf (char* message)
 	
 	len = strlen (message);
 	
-	if (message[len-2] == '\\' && message[len-1] == 'n')
+	if (strlen (message) > 2 && message[len-2] == '\\' && message[len-1] == 'n')
 	{
 		message[len-2] = ' ';
 		message[len-1] = '\n';
@@ -175,6 +175,12 @@ static void sl_printm (struct sl_mem** first, char* mname, char* mformat)
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 				
 		sl_printf (sl_str);
+	}
+	else if (utils_streq (mformat, "strn") == 0)
+	{
+		mem_get_str (first, sl_str, sizeof (sl_str), mname);
+				
+		printf ("%s\n", sl_str);
 	}
 }
 
