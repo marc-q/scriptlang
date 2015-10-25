@@ -116,7 +116,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 	{	
 		mem_get_int (first, &sl_int, mname);
 		
-		if (mvalue[0] == '$')
+		if (mvalue[0] == SL_SYM_VAR)
 		{
 			mem_get_int (first, &sl_int_cache, mvalue);
 		}
@@ -153,7 +153,7 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue, c
 	{
 		mem_get_str (first, sl_str, sizeof (sl_str), mname);
 		
-		if (mvalue[0] == '$')
+		if (mvalue[0] == SL_SYM_VAR)
 		{
 			mem_get_str (first, sl_str_cache, sizeof (sl_str_cache), mvalue);
 		}
@@ -294,9 +294,9 @@ static int read_file (char* filename)
 					sl_argc++;
 				}
 				
-				if (sl_args[0][0] != '$')
+				if (sl_args[0][0] != SL_SYM_VAR)
 				{
-					printf ("Names of variables starts with an $ !\n");
+					printf ("Names of variables starts with an %c !\n", SL_SYM_VAR);
 				}
 			
 				if (utils_streq (sl_function, "int") == 0)
@@ -309,7 +309,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "set") == 0)
 				{
-					if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == SL_SYM_VAR)
 					{
 						sl_set_int_var (&first, sl_args[0], sl_args[1]);
 						sl_set_str_var (&first, sl_args[0], sl_args[1]);
@@ -330,7 +330,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "add") == 0)
 				{
-					if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == SL_SYM_VAR)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 0);
 					}
@@ -345,7 +345,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "sub") == 0)
 				{
-					if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == SL_SYM_VAR)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 1);
 					}
@@ -360,7 +360,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "mpl") == 0)
 				{
-					if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == SL_SYM_VAR)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 2);
 					}
@@ -375,7 +375,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, "div") == 0)
 				{
-					if (sl_args[1][0] == '$')
+					if (sl_args[1][0] == SL_SYM_VAR)
 					{
 						sl_arithmetic_int_var (&first, sl_args[0], sl_args[1], 3);
 					}
