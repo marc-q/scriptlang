@@ -384,53 +384,53 @@ static int read_file (char* filename)
 				
 		if (line[0] != '#' && utils_streq (line, "") != 0)
 		{
-			if (sl_funcstate == 1 || utils_streq (line, "fed\n") == 0)
+			if (sl_funcstate == 1 || utils_streq (line, SL_WRD_FED) == 0)
 			{
 				if (sl_funcstate == 2)
 				{
 					fseek (sl_file, sl_preseekpos, SEEK_SET);
 					sl_funcstate = 0;
 				}
-				else if (utils_streq (line, "fed\n") == 0)
+				else if (utils_streq (line, SL_WRD_FED) == 0)
 				{
 					sl_funcstate = 0;
 				}
 			}
-			else if (sl_ifstate == 1 || utils_streq (line, "else\n") == 0)
+			else if (sl_ifstate == 1 || utils_streq (line, SL_WRD_ELSE) == 0)
 			{
 				if (sl_ifstate == 0)
 				{
 					sl_ifstate = 1;
 				}
-				else if (utils_streq (line, "fi\n") == 0 || utils_streq (line, "else\n") == 0)
+				else if (utils_streq (line, SL_WRD_FI) == 0 || utils_streq (line, SL_WRD_ELSE) == 0)
 				{
 					sl_ifstate = 0;
 				}
 			}
-			else if (strstr (line, ":") != NULL && strstr (line, ";") == NULL)
+			else if (strstr (line, SL_SYM_TKN) != NULL && strstr (line, SL_SYM_SUBTKN) == NULL)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
 				
-				if (parser_get_str (token, "def", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				if (parser_get_str (token, SL_WRD_DEF, sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					/* Until we intodruce args, we dont need more than one arg for this. */
 					sl_define_function (&mcore, &first, sl_args[0], ftell (sl_file));
 					sl_funcstate = 1;
 				}
-				else if (parser_get_str (token, "print", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				else if (parser_get_str (token, SL_WRD_PRINT, sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					sl_printf (sl_args[0]);
 				}
-				else if (parser_get_str (token, "read", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				else if (parser_get_str (token, SL_WRD_READ, sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					sl_readm (&first, sl_args[0]);
 				}
-				else if (parser_get_str (token, "rand", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				else if (parser_get_str (token, SL_WRD_RAND, sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					sl_randm (&first, sl_args[0]);
 				}
 			}
-			else if (strstr (line, ":") != NULL && strstr (line, ";") != NULL)
+			else if (strstr (line, SL_SYM_TKN) != NULL && strstr (line, SL_SYM_SUBTKN) != NULL)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
 				
@@ -472,7 +472,7 @@ static int read_file (char* filename)
 				{
 					sl_define_str (&mcore, &first, sl_args[0], sl_args[1]);
 				}
-				else if (utils_streq (sl_function, "set") == 0)
+				else if (utils_streq (sl_function, SL_WRD_SET) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -483,11 +483,11 @@ static int read_file (char* filename)
 						sl_set_uni (&first, sl_args[0], sl_args[1]);
 					}
 				}
-				else if (utils_streq (sl_function, "printm") == 0)
+				else if (utils_streq (sl_function, SL_WRD_PRINTM) == 0)
 				{
 					sl_printm (&first, sl_args[0], sl_args[1]);
 				}
-				else if (utils_streq (sl_function, "add") == 0)
+				else if (utils_streq (sl_function, SL_WRD_ADD) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -511,7 +511,7 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "sub") == 0)
+				else if (utils_streq (sl_function, SL_WRD_SUB) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -535,7 +535,7 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "mpl") == 0)
+				else if (utils_streq (sl_function, SL_WRD_MPL) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -559,7 +559,7 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "div") == 0)
+				else if (utils_streq (sl_function, SL_WRD_DIV) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -583,7 +583,7 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "mod") == 0)
+				else if (utils_streq (sl_function, SL_WRD_MOD) == 0)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
@@ -607,7 +607,7 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "if") == 0)
+				else if (utils_streq (sl_function, SL_WRD_IF) == 0)
 				{
 					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2]) != 0)
 					{
