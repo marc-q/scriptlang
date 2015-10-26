@@ -92,17 +92,20 @@ static void sl_arithmetic (struct sl_mem** first, char* mname, sl_mem_var* mvar_
 		case MEM_TYPE_INT:
 			switch (state)
 			{
-				case 0:
+				case SL_ALU_ADD:
 					mvar.v_int += mvar_two->v_int;
 					break;
-				case 1:
+				case SL_ALU_SUB:
 					mvar.v_int -= mvar_two->v_int;
 					break;
-				case 2:
+				case SL_ALU_MPL:
 					mvar.v_int *= mvar_two->v_int;
 					break;
-				case 3:
+				case SL_ALU_DIV:
 					mvar.v_int /= mvar_two->v_int;
+					break;
+				case SL_ALU_MOD:
+					mvar.v_int %= mvar_two->v_int;
 					break;
 				default:
 					break;
@@ -111,17 +114,21 @@ static void sl_arithmetic (struct sl_mem** first, char* mname, sl_mem_var* mvar_
 		case MEM_TYPE_FLOAT:
 			switch (state)
 			{
-				case 0:
+				case SL_ALU_ADD:
 					mvar.v_float += mvar_two->v_float;
 					break;
-				case 1:
+				case SL_ALU_SUB:
 					mvar.v_float -= mvar_two->v_float;
 					break;
-				case 2:
+				case SL_ALU_MPL:
 					mvar.v_float *= mvar_two->v_float;
 					break;
-				case 3:
+				case SL_ALU_DIV:
 					mvar.v_float /= mvar_two->v_float;
+					break;
+				case SL_ALU_MOD:
+					/* Casts to int for now, thinking about limiting modulo to int vars. */
+					mvar.v_float = (int)mvar.v_float % (int)mvar_two->v_float;
 					break;
 				default:
 					break;
@@ -259,6 +266,12 @@ static int sl_if (struct sl_mem** first, char* mname, int mmode, char* mvalue)
 			{
 				strcpy (mvar_two.v_str, mvalue);
 				mtype_two = MEM_TYPE_STR;
+			}
+			
+			if (mtype != mtype_two)
+			{
+				printf ("ERROR: Variables have different types!\n");
+				return 0;
 			}
 		
 			if (utils_streq (mvar.v_str, mvar_two.v_str) == 0)
@@ -454,7 +467,7 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 0);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], SL_ALU_ADD);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
@@ -467,7 +480,7 @@ static int read_file (char* filename)
 							mvar.v_float = atol (sl_args[1]);
 						}
 						
-						sl_arithmetic (&first, sl_args[0], &mvar, 0);
+						sl_arithmetic (&first, sl_args[0], &mvar, SL_ALU_ADD);
 					}
 					else
 					{
@@ -478,7 +491,7 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 1);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], SL_ALU_SUB);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
@@ -491,7 +504,7 @@ static int read_file (char* filename)
 							mvar.v_float = atol (sl_args[1]);
 						}
 						
-						sl_arithmetic (&first, sl_args[0], &mvar, 1);
+						sl_arithmetic (&first, sl_args[0], &mvar, SL_ALU_SUB);
 					}
 					else
 					{
@@ -502,7 +515,7 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 2);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], SL_ALU_MPL);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
@@ -515,7 +528,7 @@ static int read_file (char* filename)
 							mvar.v_float = atol (sl_args[1]);
 						}
 						
-						sl_arithmetic (&first, sl_args[0], &mvar, 2);
+						sl_arithmetic (&first, sl_args[0], &mvar, SL_ALU_MPL);
 					}
 					else
 					{
@@ -526,7 +539,7 @@ static int read_file (char* filename)
 				{
 					if (sl_args[1][0] == SL_SYM_VAR)
 					{
-						sl_arithmetic_var (&first, sl_args[0], sl_args[1], 3);
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], SL_ALU_DIV);
 					}
 					else if (isdigit (sl_args[1][0]) != 0)
 					{
@@ -539,7 +552,31 @@ static int read_file (char* filename)
 							mvar.v_float = atol (sl_args[1]);
 						}
 						
-						sl_arithmetic (&first, sl_args[0], &mvar, 3);
+						sl_arithmetic (&first, sl_args[0], &mvar, SL_ALU_DIV);
+					}
+					else
+					{
+						printf ("ERROR: Not an integer!\n");
+					}
+				}
+				else if (utils_streq (sl_function, "mod") == 0)
+				{
+					if (sl_args[1][0] == SL_SYM_VAR)
+					{
+						sl_arithmetic_var (&first, sl_args[0], sl_args[1], SL_ALU_MOD);
+					}
+					else if (isdigit (sl_args[1][0]) != 0)
+					{
+						if (strstr (sl_args[1], ".") == NULL)
+						{
+							mvar.v_int = atoi (sl_args[1]);
+						}
+						else
+						{
+							mvar.v_float = atol (sl_args[1]);
+						}
+						
+						sl_arithmetic (&first, sl_args[0], &mvar, SL_ALU_MOD);
 					}
 					else
 					{

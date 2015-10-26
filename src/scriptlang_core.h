@@ -18,6 +18,12 @@
 #define SL_WRD_STR "str"
 #define SL_WRD_STRN "strn"
 
+#define SL_ALU_ADD 0
+#define SL_ALU_SUB 1
+#define SL_ALU_MPL 2
+#define SL_ALU_DIV 3
+#define SL_ALU_MOD 4
+
 #define BIGGEST(a,b) ((a>b) ? (a) : (b))
 
 struct _sl_core
