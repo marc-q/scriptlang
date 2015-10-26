@@ -9,12 +9,12 @@ print:Calculator\n
 
 print:Addition 1, Substraction 2, Multiplication 3, Division 4\n
 print:Type what do you want to do 
-read:$form;int
+read:$form
 
 print:Type the first number 
-read:$a;float
+read:$a
 print:Type the last number 
-read:$b;float
+read:$b
 
 print:\n
 printm:$a;float

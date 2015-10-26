@@ -5,7 +5,7 @@ print:Starting read tests.\n
 int:$i;0
 
 print:Type a number 
-read:$i;int
+read:$i
 
 print:\n
 print:Your number was 
@@ -16,7 +16,7 @@ printm:$i;intn
 float:$j;0.0
 
 print:Type a number 
-read:$j;float
+read:$j
 
 print:\n
 print:Your number was 
@@ -27,7 +27,7 @@ printm:$j;floatn
 str:$aname;
 
 print:Type a name 
-read:$aname;str
+read:$aname
 
 print:\n
 print:The name was 

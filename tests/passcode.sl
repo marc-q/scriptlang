@@ -8,7 +8,7 @@ int:$puffer2;0
 int:$divisor;0
 
 # Function: checkdigit
-def:checkdigit;void
+def:checkdigit
 
 set:$puffer;$input
 div:$puffer;$divisor
@@ -27,7 +27,7 @@ print:Passcode!\n
 print:Find the right number!\n
 
 print:Your guess 
-read:$input;int
+read:$input
 
 set:$divisor;10000
 checkdigit:;

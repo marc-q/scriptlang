@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <ctype.h>
 #include "src/scriptlang_core.h"
 #include "src/scriptlang_mem.h"
@@ -151,7 +152,16 @@ static void sl_arithmetic_var (struct sl_mem** first, char* mname, char* mvalue,
 	sl_arithmetic (first, mname, &mvar, state);
 }
 
-static void sl_readm (struct sl_mem** first, char* mname, char* mformat)
+static void sl_randm (struct sl_mem** first, char* mname)
+{
+	sl_mem_var mvar;
+	
+	mvar.v_int = rand ();
+	
+	mem_set_uni (first, &mvar, mname);
+}
+
+static void sl_readm (struct sl_mem** first, char* mname)
 {
 	char sl_str[100];
 	
@@ -401,9 +411,23 @@ static int read_file (char* filename)
 			{
 				token = strtok_r (line, SL_SEP, &saveptr);
 				
-				if (parser_get_str (token, "print", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				if (parser_get_str (token, "def", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				{
+					/* Until we intodruce args, we dont need more than one arg for this. */
+					sl_define_function (&mcore, &first, sl_args[0], ftell (sl_file));
+					sl_funcstate = 1;
+				}
+				else if (parser_get_str (token, "print", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
 				{
 					sl_printf (sl_args[0]);
+				}
+				else if (parser_get_str (token, "read", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				{
+					sl_readm (&first, sl_args[0]);
+				}
+				else if (parser_get_str (token, "rand", sl_args[0], sizeof (sl_args[0]), SL_SEP, saveptr) == 0)
+				{
+					sl_randm (&first, sl_args[0]);
 				}
 			}
 			else if (strstr (line, ":") != NULL && strstr (line, ";") != NULL)
@@ -583,21 +607,12 @@ static int read_file (char* filename)
 						printf ("ERROR: Not an integer!\n");
 					}
 				}
-				else if (utils_streq (sl_function, "read") == 0)
-				{
-					sl_readm (&first, sl_args[0], sl_args[1]);
-				}
 				else if (utils_streq (sl_function, "if") == 0)
 				{
 					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2]) != 0)
 					{
 						sl_ifstate = 1;
 					}		
-				}
-				else if (utils_streq (sl_function, "def") == 0)
-				{
-					sl_define_function (&mcore, &first, sl_args[0], ftell (sl_file));
-					sl_funcstate = 1;	
 				}
 				else if (mem_get_int (&first, &sl_seekpos, sl_function) == 0)
 				{
@@ -619,6 +634,8 @@ static int read_file (char* filename)
 int main (int argc, char* argv[])
 {
 	printf ("Scriptlang v. %s (C) 2015 Marc Volker Dickmann\n\n", P_VERSION);
+	
+	srand (time (NULL));
 	
 	if (argc == 2)
 	{
