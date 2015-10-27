@@ -77,22 +77,46 @@ static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 	mem_cpy_uni (first, mname_to, mname_from);
 }
 
-static void sl_getbit (struct sl_mem** first, char* mname_to, int bitnbr_to, char* mname_from, int bitnbr_from)
+static void sl_getbit (struct sl_mem** first, char* mname_to, char* bitnbr_to, char* mname_from, char* bitnbr_from)
 {
-	int mtype;
-	sl_mem_var mvar_to, mvar_from;
+	int mtype_to, mtype_from, mtype_bnbr;
+	sl_mem_var mvar_to, mvar_from, bnbr_to, bnbr_from;
 	
 	if (mname_to[0] != SL_SYM_VAR || mname_from[0] != SL_SYM_VAR)
 	{
 		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
 	}
 	
-	mem_get_uni (first, &mvar_from, &mtype, mname_from);
+	mem_get_uni (first, &mvar_to, &mtype_to, mname_to);
+	mem_get_uni (first, &mvar_from, &mtype_from, mname_from);
 	
-	if (mtype == MEM_TYPE_INT)
+	if (bitnbr_to[0] == SL_SYM_VAR)
 	{
-		mvar_to.v_int = 0;
-		mvar_to.v_int = BITCOPY (mvar_from.v_int, bitnbr_from, mvar_to.v_int, bitnbr_to);
+		mem_get_uni (first, &bnbr_to, &mtype_bnbr, bitnbr_to);
+	}
+	else if (isdigit (bitnbr_to[0]) != 0)
+	{
+		bnbr_to.v_int = atoi (bitnbr_to);
+		mtype_bnbr = MEM_TYPE_INT;
+	}
+	
+	if (mtype_bnbr != MEM_TYPE_INT)
+	{
+		printf ("ERROR: Wrong type!\n");
+	}
+	else if (bitnbr_from[0] == SL_SYM_VAR)
+	{
+		mem_get_uni (first, &bnbr_from, &mtype_bnbr, bitnbr_from);
+	}
+	else if (isdigit (bitnbr_from[0]) != 0)
+	{
+		bnbr_from.v_int = atoi (bitnbr_from);
+		mtype_bnbr = MEM_TYPE_INT;
+	}
+	
+	if (mtype_to == MEM_TYPE_INT && mtype_from == MEM_TYPE_INT && mtype_bnbr == MEM_TYPE_INT)
+	{
+		mvar_to.v_int ^= BITCOPY (mvar_from.v_int, bnbr_from.v_int, mvar_to.v_int, bnbr_to.v_int);
 		
 		mem_set_uni (first, &mvar_to, mname_to);
 	}
@@ -408,17 +432,18 @@ static int read_file (char* filename)
 		{
 			strcpy (sl_args[i], "");
 		}
-				
-		if (line2[0] != '#' && utils_streq (line2, "") != 0)
+		
+		if (line2[0] == '\t')
 		{
-			if (line2[0] == '	')
-			{
-				strcpy (line, strpbrk (line2, "abcdefghijklmnopqrstufwxyz\n"));
-			}
-			else
-			{
-				strcpy (line, line2);
-			}
+			strcpy (line, strpbrk (line2, "abcdefghijklmnopqrstufwxyz#\n"));
+		}
+		else
+		{
+			strcpy (line, line2);
+		}
+				
+		if (line[0] != '#' && utils_streq (line, "") != 0)
+		{
 			
 			if (sl_funcstate == 1 || utils_streq (line, SL_WRD_FED) == 0)
 			{
@@ -664,7 +689,7 @@ static int read_file (char* filename)
 				}
 				else if (utils_streq (sl_function, SL_WRD_GETBIT) == 0)
 				{
-					sl_getbit (&first, sl_args[0], atoi (sl_args[1]), sl_args[2], atoi (sl_args[3]));
+					sl_getbit (&first, sl_args[0], sl_args[1], sl_args[2], sl_args[3]);
 				}
 				else if (utils_streq (sl_function, SL_WRD_FOR) == 0)
 				{
