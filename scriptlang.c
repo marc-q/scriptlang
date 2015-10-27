@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include "lib/dutils.h"
 #include "src/scriptlang_core.h"
 #include "src/scriptlang_mem.h"
 
@@ -74,6 +75,31 @@ static void sl_cpy_uni (struct sl_mem** first, char* mname_to, char* mname_from)
 	}
 	
 	mem_cpy_uni (first, mname_to, mname_from);
+}
+
+static void sl_getbit (struct sl_mem** first, char* mname_to, int bitnbr_to, char* mname_from, int bitnbr_from)
+{
+	int mtype;
+	sl_mem_var mvar_to, mvar_from;
+	
+	if (mname_to[0] != SL_SYM_VAR || mname_from[0] != SL_SYM_VAR)
+	{
+		printf ("ERROR: Names of variables starts with an %c !\n", SL_SYM_VAR);
+	}
+	
+	mem_get_uni (first, &mvar_from, &mtype, mname_from);
+	
+	if (mtype == MEM_TYPE_INT)
+	{
+		mvar_to.v_int = 0;
+		mvar_to.v_int = BITCOPY (mvar_from.v_int, bitnbr_from, mvar_to.v_int, bitnbr_to);
+		
+		mem_set_uni (first, &mvar_to, mname_to);
+	}
+	else
+	{
+		printf ("ERROR: Wrong type!\n");
+	}
 }
 
 static void sl_arithmetic (struct sl_mem** first, char* mname, sl_mem_var* mvar_two, int state)
@@ -356,15 +382,16 @@ static int sl_printm (struct sl_mem** first, char* mname, char* mformat)
 
 static int read_file (char* filename)
 {
-	int i, sl_argc, sl_ifstate, sl_funcstate, sl_seekpos, sl_preseekpos;
-	char line[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
+	int i, sl_argc, sl_funcstate, sl_seekpos, sl_preseekpos[8], sl_funccalls;
+	int sl_ifstate, sl_forstate, sl_forseek;
+	char line[SL_LINEMAX], line2[SL_LINEMAX], sl_cache[100], sl_function[50], sl_args[4][100];
 	char *token, *subtoken, *saveptr, *saveptrsub;
 	FILE *sl_file;
 	sl_core mcore;
 	sl_mem_var mvar;
 	struct sl_mem *first = NULL;
 	
-	mcore.memcount = sl_ifstate = sl_funcstate = sl_seekpos = sl_preseekpos = 0;
+	mcore.memcount = sl_ifstate = sl_funcstate = sl_seekpos = sl_funccalls = sl_forstate = sl_forseek = 0;
 	
 	sl_file = fopen (filename, "r");
 	
@@ -373,7 +400,7 @@ static int read_file (char* filename)
 		return -1;
 	}
 	
-	while (fgets (line, sizeof (line), sl_file) != NULL)
+	while (fgets (line2, sizeof (line2), sl_file) != NULL)
 	{
 		strcpy (sl_cache, "");
 		
@@ -382,29 +409,50 @@ static int read_file (char* filename)
 			strcpy (sl_args[i], "");
 		}
 				
-		if (line[0] != '#' && utils_streq (line, "") != 0)
+		if (line2[0] != '#' && utils_streq (line2, "") != 0)
 		{
+			if (line2[0] == '	')
+			{
+				strcpy (line, strpbrk (line2, "abcdefghijklmnopqrstufwxyz\n"));
+			}
+			else
+			{
+				strcpy (line, line2);
+			}
+			
 			if (sl_funcstate == 1 || utils_streq (line, SL_WRD_FED) == 0)
 			{
-				if (sl_funcstate == 2)
+				if (sl_funcstate >= 2)
 				{
-					fseek (sl_file, sl_preseekpos, SEEK_SET);
-					sl_funcstate = 0;
+					fseek (sl_file, sl_preseekpos[sl_funccalls], SEEK_SET);
+					sl_funccalls--;
+					sl_funcstate -= 2;
 				}
 				else if (utils_streq (line, SL_WRD_FED) == 0)
 				{
 					sl_funcstate = 0;
 				}
 			}
-			else if (sl_ifstate == 1 || utils_streq (line, SL_WRD_ELSE) == 0)
+			else if (sl_ifstate >= 1 || utils_streq (line, SL_WRD_ELSE) == 0)
 			{
 				if (sl_ifstate == 0)
 				{
-					sl_ifstate = 1;
+					sl_ifstate++;
 				}
 				else if (utils_streq (line, SL_WRD_FI) == 0 || utils_streq (line, SL_WRD_ELSE) == 0)
 				{
-					sl_ifstate = 0;
+					sl_ifstate--;
+				}
+			}
+			else if (sl_forstate == 2 || utils_streq (line, SL_WRD_ROF) == 0)
+			{
+				if (sl_forstate == 1)
+				{
+					fseek (sl_file, sl_forseek, SEEK_SET);
+				}
+				else if (utils_streq (line, SL_WRD_ROF) == 0)
+				{
+					sl_forstate = 0;
 				}
 			}
 			else if (strstr (line, SL_SYM_TKN) != NULL && strstr (line, SL_SYM_SUBTKN) == NULL)
@@ -611,14 +659,31 @@ static int read_file (char* filename)
 				{
 					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2]) != 0)
 					{
-						sl_ifstate = 1;
-					}		
+						sl_ifstate++;
+					}
+				}
+				else if (utils_streq (sl_function, SL_WRD_GETBIT) == 0)
+				{
+					sl_getbit (&first, sl_args[0], atoi (sl_args[1]), sl_args[2], atoi (sl_args[3]));
+				}
+				else if (utils_streq (sl_function, SL_WRD_FOR) == 0)
+				{
+					if (sl_if (&first, sl_args[0], sl_args[1][0], sl_args[2]) == 0)
+					{
+						sl_forstate = 1;
+						sl_forseek = ftell (sl_file)-strlen(line2);
+					}
+					else
+					{
+						sl_forstate = 2;
+					}
 				}
 				else if (mem_get_int (&first, &sl_seekpos, sl_function) == 0)
 				{
-					sl_preseekpos = ftell (sl_file);
+					sl_funccalls++;
+					sl_preseekpos[sl_funccalls] = ftell (sl_file);
 					fseek (sl_file, sl_seekpos, SEEK_SET);
-					sl_funcstate = 2;
+					sl_funcstate += 2;
 				}
 			}
 		}

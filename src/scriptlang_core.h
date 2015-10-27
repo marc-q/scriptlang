@@ -25,6 +25,9 @@
 /* STDLIB */
 #define SL_WRD_DEF "def"
 #define SL_WRD_FED "fed\n"
+#define SL_WRD_GETBIT "getbit"
+#define SL_WRD_FOR "for"
+#define SL_WRD_ROF "rof\n"
 
 /* STDIO */
 #define SL_WRD_PRINT "print"
