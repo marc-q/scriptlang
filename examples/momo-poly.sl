@@ -167,6 +167,7 @@ def:do_round
 		sub:$f_ki;24
 	fi
 	
+	# Print the information
 	print:Money 
 	if:$whois;=;0
 		printm:$m_player;int
@@ -195,6 +196,7 @@ fed
 
 # The main gameloop
 def:gameloop
+	# Until the player quits, loop through this
 	for:$exitnow;=;0
 		do_round:;
 		askexit:;
@@ -213,10 +215,12 @@ fed
 def:main
 	print:Momo-poly (C) 2015 Marc Volker Dickmann\n
 	nl:;
+	
 	printintro:;
 	nl:;
 	nl:;
 
+	# Starting the main gameloop
 	gameloop:;
 fed
 
