@@ -211,7 +211,7 @@ fed
 
 # The main function
 def:main
-	print:Monopoly (C) 2015 Marc Volker Dickmann\n
+	print:Momo-poly (C) 2015 Marc Volker Dickmann\n
 	nl:;
 	printintro:;
 	nl:;
