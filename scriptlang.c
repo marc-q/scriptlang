@@ -723,7 +723,7 @@ static int read_file (char* filename)
 
 int main (int argc, char* argv[])
 {
-	printf ("Scriptlang v. %s (C) 2015 Marc Volker Dickmann\n\n", P_VERSION);
+	printf ("Scriptlang v. %s (C) 2015 - 2016 Marc Volker Dickmann\n\n", P_VERSION);
 	
 	srand (time (NULL));
 	
