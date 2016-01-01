@@ -1,5 +1,5 @@
 #
-# Momo-poly: Copyright 2015 Marc Volker Dickmann
+# Momo-poly: Copyright 2015 - 2016 Marc Volker Dickmann
 #
 # Variables
 int:$exitnow;0
